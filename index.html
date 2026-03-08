@@ -692,13 +692,14 @@
   <script src="js/scrollax.min.js"></script>
   
   <script src="js/main.js"></script>
-	  <!-- ================= AI CHATBOT WIDGET ================= -->
+	 <!-- ================= CHATGPT STYLE CHATBOT ================= -->
 
 <style>
-#ai-chat-icon{
+
+#chat-icon{
 position:fixed;
-bottom:20px;
-right:20px;
+bottom:25px;
+right:25px;
 width:60px;
 height:60px;
 background:#111;
@@ -710,94 +711,131 @@ justify-content:center;
 font-size:28px;
 cursor:pointer;
 z-index:9999;
-box-shadow:0 4px 20px rgba(0,0,0,0.3);
+box-shadow:0 6px 20px rgba(0,0,0,0.3);
 }
 
-#ai-chat-box{
+#chat-window{
 position:fixed;
-bottom:90px;
-right:20px;
-width:350px;
-height:480px;
-background:white;
-border-radius:12px;
+bottom:95px;
+right:25px;
+width:360px;
+height:520px;
+background:#1e1e1e;
+border-radius:14px;
 display:none;
 flex-direction:column;
-box-shadow:0 10px 40px rgba(0,0,0,0.3);
 overflow:hidden;
+box-shadow:0 15px 45px rgba(0,0,0,0.4);
 z-index:9999;
 }
 
-#ai-chat-header{
-background:#111;
+#chat-header{
+background:#000;
 color:white;
-padding:12px;
-font-weight:bold;
+padding:14px;
+font-weight:600;
+font-size:15px;
 }
 
-#ai-chat-messages{
+#chat-messages{
 flex:1;
-padding:10px;
+padding:12px;
 overflow-y:auto;
 font-size:14px;
+color:white;
 }
 
-#ai-chat-input{
+.user-msg{
+background:#2563eb;
+padding:8px 12px;
+border-radius:8px;
+margin-bottom:10px;
+align-self:flex-end;
+width:fit-content;
+}
+
+.ai-msg{
+background:#333;
+padding:8px 12px;
+border-radius:8px;
+margin-bottom:10px;
+width:fit-content;
+}
+
+#chat-input{
 display:flex;
-border-top:1px solid #ddd;
+border-top:1px solid #444;
 }
 
-#ai-chat-input input{
+#chat-input input{
 flex:1;
+background:#111;
+color:white;
 border:none;
-padding:10px;
+padding:12px;
 outline:none;
 }
 
-#ai-chat-input button{
-background:black;
-color:white;
+#chat-input button{
+background:#2563eb;
 border:none;
-padding:10px 15px;
+color:white;
+padding:12px 16px;
 cursor:pointer;
 }
+
 </style>
 
-<div id="ai-chat-icon">💬</div>
 
-<div id="ai-chat-box">
-<div id="ai-chat-header">Ask Amit AI</div>
+<div id="chat-icon">💬</div>
 
-<div id="ai-chat-messages"></div>
+<div id="chat-window">
 
-<div id="ai-chat-input">
-<input id="ai-input" placeholder="Ask about my AI projects..." />
+<div id="chat-header">
+Ask Amit AI
+</div>
+
+<div id="chat-messages"></div>
+
+<div id="chat-input">
+<input id="user-input" placeholder="Ask about my AI work..." />
 <button onclick="sendMessage()">Send</button>
 </div>
+
 </div>
+
 
 <script>
 
-const chatIcon=document.getElementById("ai-chat-icon")
-const chatBox=document.getElementById("ai-chat-box")
-const messages=document.getElementById("ai-chat-messages")
+const chatIcon=document.getElementById("chat-icon")
+const chatWindow=document.getElementById("chat-window")
+const chatMessages=document.getElementById("chat-messages")
 
 chatIcon.onclick=()=>{
-chatBox.style.display=chatBox.style.display==="flex"?"none":"flex"
+chatWindow.style.display=
+chatWindow.style.display==="flex"?"none":"flex"
 }
+
 
 async function sendMessage(){
 
-const input=document.getElementById("ai-input")
-const text=input.value
+const input=document.getElementById("user-input")
+const text=input.value.trim()
 
-if(!text)return
+if(!text) return
 
-messages.innerHTML+=`<div><b>You:</b> ${text}</div>`
+chatMessages.innerHTML+=`<div class="user-msg">${text}</div>`
 
 input.value=""
 
-const response=await fetch("https://YOUR-RAG-API/chat",{
+const aiMessage=document.createElement("div")
+aiMessage.className="ai-msg"
+aiMessage.innerText="..."
+chatMessages.appendChild(aiMessage)
+
+chatMessages.scrollTop=chatMessages.scrollHeight
+
+const response=await fetch("https://YOUR-RAG-API/chat-stream",{
 method:"POST",
 headers:{
 "Content-Type":"application/json"
@@ -807,17 +845,29 @@ message:text
 })
 })
 
-const data=await response.json()
+const reader=response.body.getReader()
+const decoder=new TextDecoder()
 
-messages.innerHTML+=`<div><b>AI:</b> ${data.answer}</div>`
+aiMessage.innerText=""
 
-messages.scrollTop=messages.scrollHeight
+while(true){
+
+const {value,done}=await reader.read()
+
+if(done) break
+
+const chunk=decoder.decode(value)
+
+aiMessage.innerText+=chunk
+
+chatMessages.scrollTop=chatMessages.scrollHeight
+
+}
 
 }
 
 </script>
 
 <!-- ================= END CHATBOT ================= -->
-    
   </body>
 </html>
